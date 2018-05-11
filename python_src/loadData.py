@@ -24,7 +24,7 @@ opt = parser.parse_args()
 def createSpectrogramFromPath(path):
     rate,sample = wavfile.read(path)
     if type(sample[0])==np.ndarray:
-        sample = sample[:,0]
+        sample = sample[:,0]        
     Fe = 44100
     f, t, Sxx = signal.spectrogram(sample, Fe,nfft=511,nperseg=len(sample)//225)
     st()
