@@ -103,7 +103,7 @@ class DatasetFromFolder(data.Dataset):
         #   return class, spectrogram
         filepath = self.filesList[index]
         w_class = getClassFromString(filepath)
-        spectrogram = createSpectrogramFromPath(filepath, window_size=self.opt.window_siwe, step_value=self,opt.step_value)
+        spectrogram = createSpectrogramFromPath(filepath, window_size=self.opt.window_size, step_value=self.opt.step_value)
         return w_class, spectrogram
 
     
