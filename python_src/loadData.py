@@ -43,21 +43,50 @@ def addNoiseFromPath(path):
 
 #TODO change high
 
+def crop_sample(sample, window_size=65000, step_value=13000):
+    max_mean=0
+    for i in range(sample.size//step_value):
+        start = i*step_value
+        end = start + window_size
+
+        mean=np.abs(sample[start:end]).mean() if end <= sample.size else np.abs(sample[(sample.size-window_size):sample.size]).mean()
+        
+        if mean > max_mean:
+            max_mean=mean
+            if end > sample.size:
+                best_cropped_sample=sample[(sample.size-window_size):sample.size]
+            else:
+                best_cropped_sample=sample[start:end]
+    
+    return best_cropped_sample
+
+def fill_sample(sample, window_size=65000):
+    zero_sample=np.zeros(window_size)
+    zero_sample[:sample.size] = sample
+    return zero_sample
+
 def createSpectrogramFromPath(path):
+
     rate, sample = wavfile.read(path)
     if type(sample[0])==np.ndarray:
         sample = sample[:,0]        
     Fe = 44100
-    f, t, Sxx = signal.spectrogram(sample, Fe,nfft=511,nperseg=len(sample)//225)
     
-    Sxx = np.resize(Sxx, (256,256)) 
-    f = np.resize(f,256)
-    t = np.resize(t,256)
-    print(Sxx.shape)
-    norm = cls.Normalize(vmin=-1.,vmax=1.)
-    norm = cls.LogNorm(vmin=Sxx.min(), vmax=Sxx.max())
-    img = plt.pcolormesh(t, f, Sxx,norm=norm,cmap='jet')
-    return img
+    if sample.size > 65000:
+        sample = crop_sample(sample, window_size=65000, step_value=13000)
+    else:
+        sample=fill_sample(sample, window_size=65000)
+
+    f, t, Sxx = signal.spectrogram(sample, Fe,nfft=511,nperseg=len(sample)//225)
+    Sxx = Sxx[:,:256]
+    # Sxx = np.resize(Sxx, (256,256)) 
+    # f = np.resize(f,256)
+    # t = np.resize(t,256)
+    # print(Sxx.shape)
+    # norm = cls.Normalize(vmin=-1.,vmax=1.)
+    # norm = cls.LogNorm(vmin=Sxx.min(), vmax=Sxx.max())
+    # img = plt.pcolormesh(t, f, Sxx,norm=norm,cmap='jet')
+    return np.log1p(Sxx)
 
 def getClassFromString(filepath):
     fileBasename = os.path.basename(filepath)
@@ -67,7 +96,7 @@ class DatasetFromFolder(data.Dataset):
     def __init__(self):
         print('Initializing dataset from folder')
         # fix
-        self.filesList = [os.path.join(opt.path, filename) for filename in sorted(os.listdir(opt.path))][1:]
+        self.filesList = [os.path.join(opt.path, filename) for filename in sorted(os.listdir(opt.path))]
 
     def __len__(self):
         return len(self.filesList)
@@ -78,7 +107,6 @@ class DatasetFromFolder(data.Dataset):
         #   load spectrogram
         #   return class, spectrogram
         filepath = self.filesList[index]
-        print(filepath)
         w_class = getClassFromString(filepath)
         spectrogram = createSpectrogramFromPath(filepath)
         return w_class, spectrogram
