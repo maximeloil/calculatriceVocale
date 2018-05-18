@@ -13,7 +13,29 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--path', default='C:/Users/eleves/Documents/Emilien&Maxime/data/wav/', help='Path to the data directory')
 opt = parser.parse_args()
 
-#TODO add noise https://github.com/SeanNaren/deepspeech.pytorch/blob/master/data/data_loader.py
+def writeWavFromArray(sample, namefile):
+    Fe = 44100
+    scaled = np.int16(sample/np.max(np.abs(sample)) * 32767) #coding on 16 bits
+    wavfile.write(namefile+".wav", Fe, scaled)
+
+def addNoiseFromPath(path):
+    rate,sample = wavfile.read(path)
+    if type(sample[0])==np.ndarray:
+        sample = sample[:,0]
+    levelOfNoise = 0.1*np.average(abs(sample))
+    noise = np.random.normal(0,levelOfNoise,len(sample))
+    sample += noise
+    Fe = 44100
+    f, t, Sxx = signal.spectrogram(sample, Fe,nfft=511,nperseg=len(sample)//225)
+    st()
+    Sxx = np.resize(Sxx, (256,256))
+    f = np.resize(f,256)
+    t = np.resize(t,256)
+    print(Sxx.shape)
+    norm = cls.Normalize(vmin=-1.,vmax=1.)
+    norm = cls.LogNorm(vmin=Sxx.min(), vmax=Sxx.max())
+    img = plt.pcolormesh(t, f, Sxx,norm=norm,cmap='jet')
+    return img    
 
 #TODO change tempo https://github.com/SeanNaren/deepspeech.pytorch/blob/master/data/data_loader.py
 
