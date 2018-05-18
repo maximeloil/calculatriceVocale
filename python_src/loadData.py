@@ -56,7 +56,9 @@ def createSpectrogramFromPath(path):
     print(Sxx.shape)
     norm = cls.Normalize(vmin=-1.,vmax=1.)
     norm = cls.LogNorm(vmin=Sxx.min(), vmax=Sxx.max())
+    st()
     img = plt.pcolormesh(t, f, Sxx,norm=norm,cmap='jet')
+
     return img
 
 def getClassFromString(filepath):
