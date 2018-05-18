@@ -5,13 +5,8 @@ import matplotlib.colors as cls
 import wave
 from ipdb import set_trace as st
 import os
-import argparse
 import torch.utils.data as data
 import numpy as np
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--path', default='C:/Users/eleves/Documents/Emilien&Maxime/data/wav/', help='Path to the data directory')
-opt = parser.parse_args()
 
 def writeWavFromArray(sample, namefile):
     Fe = 44100
@@ -60,22 +55,22 @@ def crop_sample(sample, window_size=65000, step_value=13000):
     
     return best_cropped_sample
 
-def fill_sample(sample, window_size=65000):
+def fill_sample(sample, window_size):
     zero_sample=np.zeros(window_size)
     zero_sample[:sample.size] = sample
     return zero_sample
 
-def createSpectrogramFromPath(path):
+def createSpectrogramFromPath(path, window_size, step_value):
 
     rate, sample = wavfile.read(path)
     if type(sample[0])==np.ndarray:
         sample = sample[:,0]        
     Fe = 44100
     
-    if sample.size > 65000:
-        sample = crop_sample(sample, window_size=65000, step_value=13000)
+    if sample.size > window_size:
+        sample = crop_sample(sample, window_size, step_value)
     else:
-        sample=fill_sample(sample, window_size=65000)
+        sample=fill_sample(sample, window_size)
 
     f, t, Sxx = signal.spectrogram(sample, Fe,nfft=511,nperseg=len(sample)//225)
     Sxx = Sxx[:,:256]
@@ -93,9 +88,9 @@ def getClassFromString(filepath):
     return fileBasename.split('-')[0]
 
 class DatasetFromFolder(data.Dataset):
-    def __init__(self):
+    def __init__(self, opt):
         print('Initializing dataset from folder')
-        # fix
+        self.opt = opt
         self.filesList = [os.path.join(opt.path, filename) for filename in sorted(os.listdir(opt.path))]
 
     def __len__(self):
@@ -108,7 +103,7 @@ class DatasetFromFolder(data.Dataset):
         #   return class, spectrogram
         filepath = self.filesList[index]
         w_class = getClassFromString(filepath)
-        spectrogram = createSpectrogramFromPath(filepath)
+        spectrogram = createSpectrogramFromPath(filepath, window_size=self.opt.window_siwe, step_value=self,opt.step_value)
         return w_class, spectrogram
 
     
